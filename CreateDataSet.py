@@ -3,11 +3,11 @@ import mediapipe as mp
 import numpy as np
 import time, os
 
-actions = ['come', 'away', 'spin']
+actions = ['사랑', '솔직하다', '저울', '빵', '근육']
 seq_length = 30
 secs_for_action = 30
 
-# MediaPipe hands model
+# MediaPipe hands model 초기화  
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(
@@ -15,13 +15,16 @@ hands = mp_hands.Hands(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5)
 
+# OpenCV 카메라 초기화 
 cap = cv2.VideoCapture(0)
 
 created_time = int(time.time())
+
+# DataSet 저장할 폴더 설정
 os.makedirs('dataset', exist_ok=True)
 
-while cap.isOpened():
-    for idx, action in enumerate(actions):
+while cap.isOpened(): # 웹캠을 열어
+    for idx, action in enumerate(actions): # Action마다 녹화
         data = []
 
         ret, img = cap.read()
@@ -30,25 +33,25 @@ while cap.isOpened():
 
         cv2.putText(img, f'Waiting for collecting {action.upper()} action...', org=(10, 30), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
         cv2.imshow('img', img)
-        cv2.waitKey(3000)
+        cv2.waitKey(5000) # 다음 액션을 시행하기 전 5초간 대기
 
         start_time = time.time()
 
         while time.time() - start_time < secs_for_action:
-            ret, img = cap.read()
+            ret, img = cap.read() # 프레임을 하나씩 읽음
 
             img = cv2.flip(img, 1)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            result = hands.process(img)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # MediaPipe에 넣어줌
+            result = hands.process(img) # 결과 추출
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
             if result.multi_hand_landmarks is not None:
                 for res in result.multi_hand_landmarks:
                     joint = np.zeros((21, 4))
                     for j, lm in enumerate(res.landmark):
-                        joint[j] = [lm.x, lm.y, lm.z, lm.visibility]
+                        joint[j] = [lm.x, lm.y, lm.z, lm.visibility] # 각도로 추출
 
-                    # Compute angles between joints
+                    # 손가락 관절 사이 각도를 구하는 코드
                     v1 = joint[[0,1,2,3,0,5,6,7,0,9,10,11,0,13,14,15,0,17,18,19], :3] # Parent joint
                     v2 = joint[[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], :3] # Child joint
                     v = v2 - v1 # [20, 3]
@@ -63,7 +66,7 @@ while cap.isOpened():
                     angle = np.degrees(angle) # Convert radian to degree
 
                     angle_label = np.array([angle], dtype=np.float32)
-                    angle_label = np.append(angle_label, idx)
+                    angle_label = np.append(angle_label, idx) # 레이블로 인덱스 넘버 부여
 
                     d = np.concatenate([joint.flatten(), angle_label])
 
@@ -75,11 +78,11 @@ while cap.isOpened():
             if cv2.waitKey(1) == ord('q'):
                 break
 
-        data = np.array(data)
-        print(action, data.shape)
+        data = np.array(data) # data -> numpy.array 로 형변환
+        print(action, data.shape) # 결과 프린트
         np.save(os.path.join('dataset', f'raw_{action}_{created_time}'), data)
 
-        # Create sequence data
+        # 시퀀스 데이터 생성 로직
         full_seq_data = []
         for seq in range(len(data) - seq_length):
             full_seq_data.append(data[seq:seq + seq_length])
