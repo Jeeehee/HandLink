@@ -4,6 +4,7 @@ import numpy as np
 import time, os
 
 actions = ['사랑', '솔직하다', '저울', '빵', '근육']
+number_of_hands = 2
 seq_length = 30
 secs_for_action = 30
 
@@ -11,7 +12,7 @@ secs_for_action = 30
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(
-    max_num_hands=1,
+    max_num_hands=number_of_hands,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5)
 
