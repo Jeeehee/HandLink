@@ -4,7 +4,9 @@ Dataset을 추출해, 딥러닝 뉴럴 네트워크 중 **RNN의 LSTM(Long Short
 
 <br>
 
-#### ✔️ [고민과 해결](https://github.com/Jeeehee/HandLink/wiki/%EA%B3%A0%EB%AF%BC%EA%B3%BC-%ED%95%B4%EA%B2%B0)
+#### Trouble Shooting
+- [주피터 노트북 설치 에러](https://github.com/Jeeehee/HandLink/issues/1)
+- [MediaPipe의 한 손 인식 및 LSTM 정확도 낮음](https://github.com/Jeeehee/HandLink/issues/2)
 
 <br>
 
