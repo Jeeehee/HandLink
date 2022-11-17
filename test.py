@@ -1,12 +1,12 @@
-import sys
 import cv2
 import mediapipe as mp
 import numpy as np
 import tensorflow as tf
+from PIL import ImageFont, ImageDraw, Image
 
 load = tf.keras.models.load_model
 
-actions = ['안녕', "반짝이다", '가다']
+actions = ["안녕", "반짝이다", "가다"]
 seq_length = 30
 number_of_hands = 2
 
@@ -82,8 +82,17 @@ while cap.isOpened():
             if action_seq[-1] == action_seq[-2] == action_seq[-3]:
                 this_action = action
 
-            cv2.putText(img, f'{this_action.upper()}', org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
 
+            r, g, b, a = 255, 255, 255, 0
+            fontPath = "fonts/gulim.ttc"
+            font = ImageFont.truetype(fontPath, 80)
+            img = Image.fromarray(img)
+            draw = ImageDraw.Draw(img)
+            text = this_action
+
+            draw.text((40, 40), text, font=font, fill=(r,g,b,a))
+            img = np.array(img)
+            
     cv2.imshow('img', img)
     if cv2.waitKey(1) == ord('q'):
         break
