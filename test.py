@@ -1,13 +1,16 @@
+import sys
 import cv2
 import mediapipe as mp
 import numpy as np
-from tensorflow.keras.models import load_model
+import tensorflow as tf
 
-actions = ['안녕', '반짝이다', '가다']
+load = tf.keras.models.load_model
+
+actions = ['안녕', "반짝이다", '가다']
 seq_length = 30
 number_of_hands = 2
 
-model = load_model('models/model2_1.0.h5')
+model = load('models/model.h5')
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
