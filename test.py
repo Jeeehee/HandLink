@@ -6,11 +6,10 @@ from PIL import ImageFont, ImageDraw, Image
 
 load = tf.keras.models.load_model
 
-actions = ["안녕", "반짝이다", "가다"]
-seq_length = 30
+actions = ['안녕', '반짝이다', '가다']
 number_of_hands = 2
-
-model = load('models/model.h5')
+seq_length = 30
+secs_for_action = 30
 
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
@@ -20,6 +19,7 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.5)
 
 cap = cv2.VideoCapture(0)
+model = load('models/model.h5')
 
 seq = []
 action_seq = []
@@ -39,14 +39,12 @@ while cap.isOpened():
             for j, lm in enumerate(res.landmark):
                 joint[j] = [lm.x, lm.y, lm.z, lm.visibility]
 
-            # Compute angles between joints
-            v1 = joint[[0,1,2,3,0,5,6,7,0,9,10,11,0,13,14,15,0,17,18,19], :3] # Parent joint
-            v2 = joint[[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], :3] # Child joint
+            
+            v1 = joint[[0,1,2,3,0,5,6,7,0,9,10,11,0,13,14,15,0,17,18,19], :3]
+            v2 = joint[[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], :3]
             v = v2 - v1
-            # Normalize v
             v = v / np.linalg.norm(v, axis=1)[:, np.newaxis]
 
-            # Get angle using arcos of dot product
             angle = np.arccos(np.einsum('nt,nt->n',
                 v[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18],:], 
                 v[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19],:])) # [15,]
@@ -69,7 +67,7 @@ while cap.isOpened():
             i_pred = int(np.argmax(y_pred))
             conf = y_pred[i_pred]
 
-            if conf < 0.9: # 정확도 90이상만 Action Sequence에 저장
+            if conf < 0.9:
                 continue
 
             action = actions[i_pred]
@@ -82,15 +80,13 @@ while cap.isOpened():
             if action_seq[-1] == action_seq[-2] == action_seq[-3]:
                 this_action = action
 
-
-            r, g, b, a = 255, 255, 255, 0
             fontPath = "fonts/gulim.ttc"
             font = ImageFont.truetype(fontPath, 80)
             img = Image.fromarray(img)
             draw = ImageDraw.Draw(img)
             text = this_action
 
-            draw.text((40, 40), text, font=font, fill=(r,g,b,a))
+            draw.text((40, 40), text, font=font, fill='black')
             img = np.array(img)
             
     cv2.imshow('img', img)
