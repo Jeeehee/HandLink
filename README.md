@@ -5,6 +5,7 @@
 
 - Python Mediapipe를 사용해 손의 21개 3D 랜드마크를 추출 -> 각도를 활용해 Dataset을 추출
 - 딥러닝 뉴럴 네트워크 중 **RNN의 LSTM(Long Short Term Memory)** 으로 인공지능 학습
+- [왜 LSTM 인가? ▶︎](https://github.com/Jeeehee/HandLink/issues/7)
 - [구현 과정 및 프레임워크 선택 이유 ▶︎](https://github.com/Jeeehee/HandLink/issues/6)
 
 <br>
