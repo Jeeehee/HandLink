@@ -227,6 +227,11 @@ class SignLanguageDatasetBuilder:
         else:
             print("Camera could not be opened")
 
+        # 수어 리스트 저장
+        data_as_strings = [",".join(actions)]
+        with open("signLanguageList/list.csv", "a", encoding="utf-8-sig") as f:
+            np.savetxt(f, data_as_strings, fmt="%s")
+
 # 메인 실행 코드
 if __name__ == "__main__":
     recognizer = SignLanguageDatasetBuilder()
