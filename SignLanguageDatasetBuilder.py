@@ -8,7 +8,7 @@ import time, os
 # Guide Text
 guide = "[ Guide ]"
 guide_inputWord = "Enter the sign language words you want to collect.\n(separated by commas.)"
-guide_setDefaultWords = "No word was entered. Set to default words."  # ❤️
+guide_setDefaultWords = "No word was entered. Set to default words."
 guide_preparing = "Preparing to collect. Collect 3 sets of 10 seconds each."
 guide_start = "Start collecting sign language data." 
 guide_remainingTime = "seconds left until collection ends"
