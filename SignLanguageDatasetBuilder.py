@@ -3,20 +3,17 @@ import mediapipe as mp
 import numpy as np
 import time, os
 
-from PIL import ImageFont, ImageDraw, Image
-
-# 25.03.30 Jee
+# last update: 25.04.02 - Jee
 
 # Guide Text
 guide = "[ Guide ]"
 guide_inputWord = "Enter the sign language words you want to collect.\n(separated by commas.)"
-guide_setDefaultWords = "No word was entered. Set to default words."
-guide_collect = "Words to collect is "
-guide_preparing = "Preparing to collect."
-guide_start = "Start collecting sign language data."
-guide_collecting = "Collecting sign language data for "
-guide_remainingTime = "remaining time"
-guide_done = "Done"
+guide_setDefaultWords = "No word was entered. Set to default words."  # ❤️
+guide_preparing = "Preparing to collect. Collect 3 sets of 10 seconds each."
+guide_start = "Start collecting sign language data." 
+guide_remainingTime = "seconds left until collection ends"
+guide_collectionCompleted = "Sign language collection completed"
+guide_savedCompleted = "Data saved completed"
 
 class SignLanguageDatasetBuilder:
 
@@ -37,7 +34,7 @@ class SignLanguageDatasetBuilder:
         # 데이터 저장 설정
         self.created_time = int(time.time())  # 데이터 저장 시 사용될 시간 값 생성
         os.makedirs('dataset', exist_ok=True)  # 데이터 저장할 폴더 생성 (이미 존재하면 무시)
-
+        
         # 카메라 설정
         self.cap = None
 
@@ -50,7 +47,7 @@ class SignLanguageDatasetBuilder:
             self.cap = None
             return
         
-        self.cap.set(cv2.CAP_PROP_FPS, 30)  # FPS를 30으로 설정
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
 
     # 사용자로부터 액션 입력받기
     def request_action_input(self):
@@ -110,7 +107,7 @@ class SignLanguageDatasetBuilder:
          
         # 수집된 데이터 저장 - 원본 데이터
         data = np.array(data)  # 수집된 데이터를 NumPy 배열로 변환
-        print(f"{action}, 시도 {attempt + 1}, 데이터 크기: {data.shape}")
+        print(f"[ {action} {attempt + 1} ] - 데이터 크기: {data.shape}")
         np.save(os.path.join('dataset', f'raw_{action}_{attempt + 1}_{self.created_time}'), data)
         
         # 시퀀스 데이터 생성 및 저장
@@ -119,34 +116,40 @@ class SignLanguageDatasetBuilder:
             full_seq_data.append(data[seq:seq + self.seq_length])
         
         full_seq_data = np.array(full_seq_data)  # NumPy 배열로 변환
-        print(f"{action}, 시도 {attempt + 1}, 시퀀스 데이터 크기: {full_seq_data.shape}")
+        print(f"[ {action} {attempt + 1} ] - 시퀀스 데이터 크기: {full_seq_data.shape}")
         np.save(os.path.join('dataset', f'seq_{action}_{attempt + 1}_{self.created_time}'), full_seq_data)
-        
-        print(f"시도 {attempt + 1} 완료")
+        print(f"[ {action} {attempt + 1} ] - 데이터 저장 성공")
 
     def collect_sign_language_data(self, action, idx, attempt):
         collected_data = []
         
         # 준비 화면 표시
         ret, img = self.cap.read()  # 카메라에서 프레임 읽기
+
+        if not ret or img is None:
+            print("카메라에서 이미지를 읽지 못했습니다.")
+            return collected_data
+    
         img = cv2.flip(img, 1)  # 좌우반전 (거울 효과)
 
         # 데이터 수집 전 사용자에게 대기 메시지 표시
         cv2.putText(
             img, 
-            f'Waiting for collecting', 
-            org=(10, 30), 
-            fontFace=cv2.FONT_HERSHEY_SIMPLEX, 
+            f'{guide} {guide_preparing}', 
+            org=(20, 50), 
+            fontFace=cv2.FONT_HERSHEY_DUPLEX, 
             fontScale=1, 
-            color=(255, 255, 255), 
+            color=0, 
             thickness=2
         )
-        cv2.imshow('img', img)  # 현재 프레임 화면에 표시
-        cv2.waitKey(5000)  # 5초(5000ms) 대기 - 사용자가 준비할 시간
-        
+
+        cv2.imshow('Sign Language Data Collection', img)  # 현재 프레임 화면에 표시
+        cv2.waitKey(3000)  # 3초(3 000ms) 대기 - 사용자가 준비할 시간
+
+        # 데이터 수집 시작
         print(f"Collecting data for '{action}' -Attempt {attempt + 1} Start")
-        start_time = time.time()
         
+        start_time = time.time()
         fail_count = 0
         max_failures = 10  # 실패 허용 횟수
     
@@ -164,11 +167,39 @@ class SignLanguageDatasetBuilder:
             frame_data, img = self.process_hand_landmarks(result, idx, img)
             collected_data.extend(frame_data)
             
+            # 남은 시간 계산 및 표시
+            elapsed_time = time.time() - start_time
+            remaining_time = int(max(0, self.secs_for_action - elapsed_time))
+            
+            if remaining_time > 0:
+                # 수집 진행 중 메시지
+                cv2.putText(
+                    img, 
+                    f'{guide} Attempt {attempt + 1} - {remaining_time} {guide_remainingTime}', 
+                    org=(20, 50), 
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX, 
+                    fontScale=1, 
+                    color=0, 
+                    thickness=2
+                )
+            else:
+                # 수집 완료 메시지
+                cv2.putText(
+                    img, 
+                    f'{guide} {guide_collectionCompleted}', 
+                    org=(20, 50), 
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX, 
+                    fontScale=1, 
+                    color=0, 
+                    thickness=2
+                )
+
             # 화면 표시 및 종료 확인
-            cv2.imshow('img', img)
+            cv2.imshow('Sign Language Data Collection', img)
+
             if cv2.waitKey(1) == ord('q'):
                 break
-        
+                
         return collected_data
     
     def run(self):
@@ -183,7 +214,7 @@ class SignLanguageDatasetBuilder:
                 for attempt in range(3):  # 한 동작당 세 번 반복하여 학습
                     # 데이터 수집
                     data = self.collect_sign_language_data(action, idx, attempt)
-                    
+
                     # 데이터 저장
                     self.save_data(data, action, attempt)
                     
